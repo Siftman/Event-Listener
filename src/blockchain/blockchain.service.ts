@@ -48,8 +48,6 @@ export class BlockchainService implements OnModuleInit {
                 await this.initializeWeb3Connection();
             }
             const block = await this.web3.eth.getBlock('latest');
-            this.logger.log("IM HERE2")
-            console.log("again")
             return transformBlockchainData(block);
         } catch (error) {
             this.logger.error('Error fetching latest block:', error);

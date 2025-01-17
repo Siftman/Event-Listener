@@ -8,6 +8,7 @@ export class BlockchainController {
 
     @Get('latest-block')
     getLatestBlock() {
-        console.log("BC controller works fine");
+        console.log("Latest block endpoint is called.");
+        return this.blockchainService.getLatestBlock();
     }
 }
