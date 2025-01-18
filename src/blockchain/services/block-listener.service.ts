@@ -87,6 +87,7 @@ export class BlockListenerService implements OnModuleInit {
         while (true) {
             try {
                 this.logger.log('in process ...');
+                
                 const blockNumber = await this.queueService.getNextBlock();
                 if (!blockNumber) {
                     this.logger.log('no block to process. waiting ...');
@@ -94,6 +95,7 @@ export class BlockListenerService implements OnModuleInit {
                     continue;
                 }
                 this.logger.log(`processing block ${blockNumber}...`)
+
                 const block = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
                 await this.processBlock(block);
                 this.logger.log(`block ${blockNumber} processed successfully.`)
