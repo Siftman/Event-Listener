@@ -8,9 +8,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { Repository } from "typeorm";
 import { TransferGateway } from "../gateways/transfer.gateway";
-import { transformBlockchainData } from "../utils/transform.utils";
-import { getTransactionFromOrToAttr } from "web3/lib/commonjs/eth.exports";
-
+import { QueueService } from "./queue.service";
+import { ERR_TX_RECEIPT_MISSING_OR_BLOCKHASH_NULL } from "web3";
 
 @Injectable()
 export class USDCService extends BaseWeb3Service implements OnModuleInit {
@@ -20,7 +19,8 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         protected configService: ConfigService,
         @InjectRepository(USDCTransaction)
         private usdcTransactionRepository: Repository<USDCTransaction>,
-        private transferGateway: TransferGateway
+        private transferGateway: TransferGateway,
+        private queueService: QueueService
     ) {
         super(configService, USDCService.name);
     }
@@ -63,9 +63,12 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
 
         try {
             this.logger.log('creating transfer event subscription');
+
+            const lastProcessedBlock = await this.queueService.getLastProcessedEvent() || 'latest';
+            this.logger.log(`Creating Transfer event subscription from block ${lastProcessedBlock}...`);
+
             const events = this.contract.events.Transfer({
-                fromBlock: 'latest'
-                // toBlock
+                fromBlock: lastProcessedBlock
             });
             events.on('connected', (subscriptionId: string) => {
                 this.logger.log(`transfer event subs connected with id : ${subscriptionId}`);
@@ -119,6 +122,8 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 timestamp: Date.now()
             })
             this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+
+            await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
         }
         catch (error) {
             this.logger.error('Error processing transfer event: ', error);
