@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>USDC Transfer Monitor</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .transfer {
+            border: 1px solid #ccc;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .large-value {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>USDC Large Transfer Monitor</h1>
+    <div id="status">Connecting...</div>
+    <div id="transfers"></div>
+
+    <script>
+        const socket = io('ws://localhost:4040/transfers');
+        const transfersDiv = document.getElementById('transfers');
+        const statusDiv = document.getElementById('status');
+
+        socket.on('connect', () => {
+            statusDiv.textContent = 'Connected to transfer monitor';
+            statusDiv.style.color = 'green';
+        });
+
+        socket.on('disconnect', () => {
+            statusDiv.textContent = 'Disconnected from transfer monitor';
+            statusDiv.style.color = 'red';
+        });
+
+        socket.on('largeTransfer', (transfer) => {
+            const transferDiv = document.createElement('div');
+            transferDiv.className = 'transfer';
+            transferDiv.innerHTML = `
+                <div>Block: ${transfer.blockNumber}</div>
+                <div>From: ${transfer.from}</div>
+                <div>To: ${transfer.to}</div>
+                <div>${transfer.valueInUSDC}</div>
+                <div class="large-value">Amount: ${transfer.valueInUSDC} USDC</div>
+                <div>Tx Hash: ${transfer.transactionHash}</div>
+                <div>Time: ${new Date(transfer.timestamp).toLocaleString()}</div>
+            `;
+            transfersDiv.insertBefore(transferDiv, transfersDiv.firstChild);
+        });
+    </script>
+</body>
+
+</html>

@@ -10,6 +10,7 @@ import { BlockchainController } from './blockchain.controller';
 import { BlockListenerService } from './services/block-listener.service';
 import { USDCService } from './services/usdc.service';
 import { USDCTransaction } from './entities/usdc-transaction.entity';
+import { TransferGateway } from './gateways/transfer.gateway';
 
 @Module({
     imports: [
@@ -19,7 +20,8 @@ import { USDCTransaction } from './entities/usdc-transaction.entity';
     providers: [
         QueueService,
         BlockListenerService,
-        USDCService
+        USDCService,
+        TransferGateway
     ],
     controllers: [BlockchainController],
     exports: [],

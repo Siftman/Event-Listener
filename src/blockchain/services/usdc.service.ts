@@ -7,6 +7,7 @@ import { BaseWeb3Service } from "./base-web3.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { Repository } from "typeorm";
+import { TransferGateway } from "../gateways/transfer.gateway";
 
 
 @Injectable()
@@ -16,9 +17,10 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     constructor(
         protected configService: ConfigService,
         @InjectRepository(USDCTransaction)
-        private usdcTransactionRepository: Repository<USDCTransaction>
+        private usdcTransactionRepository: Repository<USDCTransaction>,
+        private transferGateway: TransferGateway
     ) {
-        super(configService, USDCService.name)
+        super(configService, USDCService.name);
     }
 
     async onModuleInit() {
@@ -82,9 +84,9 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
 
     private async processTransferEvent(event: any) {
         try {
-            const ValueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
-            if (ValueInUSDC <= BigInt(100_000)) {
-                this.logger.debug(`skipping small transfer: ${ValueInUSDC} usdc`);
+            const valueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
+            if (valueInUSDC <= BigInt(100_000)) {
+                this.logger.debug(`skipping small transfer: ${valueInUSDC} usdc`);
                 return;
             }
 
@@ -96,7 +98,17 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 value: event.returnValues.value
             });
             await this.usdcTransactionRepository.save(transaction);
-            this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${ValueInUSDC}) in usdc`);
+            this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+
+            this.transferGateway.broadcastTransfer({
+                transactionHash: event.transactionHash,
+                blockNumber: Number(event.blockNumber),
+                from: event.returnValues.from,
+                to: event.returnValues.to,
+                ValueInUSDC: event.returnValues.value.toString(),
+                timestamp: Date.now()
+            })
+            this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
         }
         catch (error) {
             this.logger.error('Error processing transfer event: ', error);
