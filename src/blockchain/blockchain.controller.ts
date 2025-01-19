@@ -1,14 +1,14 @@
 import { Controller, Get, HttpException, HttpStatus } from "@nestjs/common";
-import { BlockchainService } from "./blockchain.service";
+import { BaseWeb3Service } from "./services/base-web3.service";
+import { BlockListenerService } from "./services/block-listener.service";
 
 
 @Controller('blockchain')
 export class BlockchainController {
-    constructor(private readonly blockchainService: BlockchainService) {}
+    constructor(private readonly blockListenerService: BlockListenerService ) {}
 
     @Get('latest-block')
     getLatestBlock() {
-        console.log("Latest block endpoint is called.");
-        return this.blockchainService.getLatestBlock();
+        return this.blockListenerService.getLatestBlock();
     }
 }

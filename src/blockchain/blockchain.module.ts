@@ -4,11 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Block } from './entities/block.entity';
 
-import { BlockchainService } from './blockchain.service';
 import { QueueService } from './services/queue.service';
 
 import { BlockchainController } from './blockchain.controller';
 import { BlockListenerService } from './services/block-listener.service';
+import { USDCService } from './services/usdc.service';
 
 @Module({
     imports: [
@@ -16,11 +16,11 @@ import { BlockListenerService } from './services/block-listener.service';
         TypeOrmModule.forFeature([Block])
     ],
     providers: [
-        BlockchainService,
         QueueService,
-        BlockListenerService
+        BlockListenerService,
+        USDCService
     ],
     controllers: [BlockchainController],
-    exports: [BlockchainService],
+    exports: [],
 })
 export class BlockchainModule { }

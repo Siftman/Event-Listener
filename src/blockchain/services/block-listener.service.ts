@@ -9,53 +9,32 @@ import Web3 from "web3";
 
 import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
+import { BaseWeb3Service } from "./base-web3.service";
 
 
 @Injectable()
-export class BlockListenerService implements OnModuleInit {
-    private web3: Web3;
-    private wsProvider: any;
-    private readonly logger = new Logger(BlockListenerService.name);
+export class BlockListenerService extends BaseWeb3Service implements OnModuleInit {
     private isProcessing = false;
 
     constructor(
-        private configService: ConfigService,
+        protected configService: ConfigService,
         private queueService: QueueService,
         @InjectRepository(Block)
         private blockRepository: Repository<Block>,
-    ) { }
+    ) { 
+        super(configService, BlockListenerService.name);
+    }
 
 
     async onModuleInit() {
-        await this.initializerBlockListener();
-        this.startBlockProcessor();
-    }
-
-    private async initializerBlockListener() {
+        this.logger.log('Blockchain service initializing...');
         try {
-            const wsUrl = this.configService.get<string>('ETHEREUM_WS_URL');
-            this.wsProvider = new Web3.providers.WebsocketProvider(wsUrl);
-            this.web3 = new Web3(this.wsProvider);
-
-            this.wsProvider.on('connect', () => {
-                this.logger.log('ws connected successfully.');
-                this.setup_Block_Header_Subscription();
-            });
-
-            this.wsProvider.on('error', (error) => {
-                this.logger.error('ws error: ', error);
-            });
-
-            this.wsProvider.on('end', () => {
-                this.logger.warn('ws connection ended');
-            });
-
-            const blockNumber = await this.web3.eth.getBlockNumber();
-            this.logger.log(`connected to the eth network with current block: ${blockNumber}`);
-
+            await this.initializeWeb3Connection();
+            await this.setup_Block_Header_Subscription();
+            this.startBlockProcessor();
         }
-        catch (error) {
-            this.logger.error('fail to connect to initialize listener');
+        catch(error){
+            this.logger.error('Fail to initialize:', error);
             throw error;
         }
     }
@@ -77,6 +56,7 @@ export class BlockListenerService implements OnModuleInit {
         }
         catch (error) {
             this.logger.error('Failed to setup subscription', error);
+            throw error;
         }
     }
 
@@ -87,7 +67,7 @@ export class BlockListenerService implements OnModuleInit {
         while (true) {
             try {
                 this.logger.log('in process ...');
-                
+
                 const blockNumber = await this.queueService.getNextBlock();
                 if (!blockNumber) {
                     this.logger.log('no block to process. waiting ...');
@@ -128,5 +108,9 @@ export class BlockListenerService implements OnModuleInit {
             this.logger.error(`fail to proceess the block ${blockData.number}`)
             throw error;
         }
+    }
+
+    public async getLatestBlock(){
+        return await this.web3.eth.getBlockNumber();
     }
 }
