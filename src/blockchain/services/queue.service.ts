@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 
 import { createClient } from "redis";
 import type { RedisClientType } from "redis";
-import { throwError } from "rxjs";
+
 
 
 @Injectable()
@@ -33,7 +33,7 @@ export class QueueService implements OnModuleInit {
             this.logger.log('redis is connected now');
 
         }
-        catch(error) {
+        catch (error) {
             this.logger.error('fail to initialize redis');
         }
     }
@@ -43,7 +43,7 @@ export class QueueService implements OnModuleInit {
             await this.redisClient.lPush(this.BLOCK_QUEUE, blockNumber.toString());
             this.logger.debug(`Added block ${blockNumber} to queue`);
         }
-        catch(error) {
+        catch (error) {
             this.logger.error('fail to add block: ', error);
             throw error;
         }
@@ -52,7 +52,7 @@ export class QueueService implements OnModuleInit {
     async getNextBlock(): Promise<Number | null> {
         try {
             const blockNumber = await this.redisClient.rPop(this.BLOCK_QUEUE);
-            if(blockNumber) {
+            if (blockNumber) {
                 this.logger.debug(`retrieve block ${blockNumber} from queue`);
             }
             return blockNumber ? parseInt(blockNumber) : null;
