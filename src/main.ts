@@ -14,6 +14,7 @@ async function bootstrap() {
   });
   app.useWebSocketAdapter(new IoAdapter(app));
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   await app.listen(4040);
 }
 bootstrap();

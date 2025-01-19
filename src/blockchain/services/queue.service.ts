@@ -4,7 +4,7 @@ import { error } from "console";
 
 import { createClient } from "redis";
 import type { RedisClientType } from "redis";
-import { last } from "rxjs";
+import { first, last, timestamp } from "rxjs";
 
 
 
@@ -13,6 +13,7 @@ export class QueueService implements OnModuleInit {
     private redisClient: RedisClientType;
     private readonly BLOCK_QUEUE = 'block_queue';
     private readonly LAST_EVENT_KEY = 'last_event'
+    private readonly TRANSFER_CACHE_KEY = 'recent_large_transfers'
     private readonly logger = new Logger;
 
     constructor(private configService: ConfigService) { }
@@ -80,12 +81,55 @@ export class QueueService implements OnModuleInit {
     async getLastProcessedEvent(): Promise<number | null> {
         try {
             const lastEvent = await this.redisClient.get(this.LAST_EVENT_KEY);
-            return lastEvent ? parseInt(lastEvent): null;
+            return lastEvent ? parseInt(lastEvent) : null;
         }
         catch (error) {
             this.logger.error('fail to get the last processed event.')
             throw error;
         }
     }
+
+
+    // async cacheTransfers(page: number, transfers: any[], total: number) {
+    //     try {
+    //         const cacheData = {
+    //             transfers,
+    //             total,
+    //             timestamp: Date.now()
+    //         };
+    //         await this.redisClient.hSet(this.TRANSFER_CACHE_KEY, page.toString(), JSON.stringify(cacheData));
+    //     }
+    //     catch (error) {
+    //         this.logger.error('Failed to cache transfers:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // async getCachedTransfers(page: number): Promise<{ transfers: any[], total: number } | null> {
+    //     try {
+    //         const cached = await this.redisClient.hGet(this.TRANSFER_CACHE_KEY, page.toString());
+    //         return cached ? JSON.parse(cached) : null;
+    //     }
+    //     catch (error) {
+    //         this.logger.error('Failed to get cached transfers:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // async updateTransfersCache(newTransfer: any) {
+    //     try {
+    //         const firstPageCache = await this.getCachedTransfers(1);
+    //         if(firstPageCache) {
+    //             const {transfers, total} = firstPageCache;
+    //             transfers.unshift(newTransfer);
+    //             transfers.pop();
+    //             await this.cacheTransfers(1, transfers, total + 1);
+    //         }
+    //     }
+    //     catch (error) {
+    //         this.logger.error('Failed to update transfers cache:', error);
+    //         throw error;
+    //     }
+    // }
 }
 

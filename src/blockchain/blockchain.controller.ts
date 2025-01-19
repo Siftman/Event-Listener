@@ -3,6 +3,7 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 
 import { BlockListenerService } from "./services/block-listener.service";
 import { USDCService } from "./services/usdc.service";
+import { PaginationDto } from "src/common/dto/pagination.dto";
 
 
 @ApiTags('blockchain')
@@ -15,15 +16,10 @@ export class BlockchainController {
 
     @Get('blocks')
     @ApiOperation({ summary: 'list of stored blocks' })
-    @ApiQuery({ name: 'page', required: false, type: Number })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiResponse({ status: 200, description: 'return a list of blocks with pagination' })
-    async getBlocks(
-        @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-        @Query('limit', new ParseIntPipe({ optional: true })) limit = 10
-    ) {
+    async getBlocks(@Query() paginationDto: PaginationDto) {
         try {
-            return await this.blockListenerService.getBlocks(page, limit);
+            return await this.blockListenerService.getBlocks(paginationDto.page, paginationDto.limit);
         }
         catch (error) {
             throw new HttpException({
@@ -35,15 +31,10 @@ export class BlockchainController {
 
     @Get('transfers')
     @ApiOperation({ summary: 'list of large USDC transfers' })
-    @ApiQuery({ name: 'page', required: false, type: Number })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
     @ApiResponse({ status: 200, description: 'return a list of large usdc transfers with pagination' })
-    async getTransfers(
-        @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-        @Query('limit', new ParseIntPipe({ optional: true })) limit = 10
-    ) {
+    async getTransfers(@Query() paginationDto: PaginationDto) {
         try {
-            return await this.usdcService.getTransfers(page, limit);
+            return await this.usdcService.getTransfers(paginationDto.page, paginationDto.limit);
         }
         catch (error) {
             throw new HttpException({

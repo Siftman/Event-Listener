@@ -1,5 +1,4 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
-import { Transfer } from "./transfer.entity";
 
 
 @Entity('blocks')
@@ -30,9 +29,6 @@ export class Block {
 
     @Column()
     nonce: string;
-
-    @OneToMany(() => Transfer, transfer => transfer.block)
-    transfers: Transfer[];
 
     @CreateDateColumn()
     createdAt: Date;
