@@ -8,6 +8,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { Repository } from "typeorm";
 import { TransferGateway } from "../gateways/transfer.gateway";
+import { transformBlockchainData } from "../utils/transform.utils";
+import { getTransactionFromOrToAttr } from "web3/lib/commonjs/eth.exports";
 
 
 @Injectable()
@@ -52,10 +54,18 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     }
 
     private async setupTransferEventListener() {
+        // don't miss any events 
+        // تا الان کدوم بلاک هارو گرفتم - از اخرین بلاکی که دارم تا لیتست بلاک 
+        // اینجا هم میتونم کیو داشته باشیم لیتست بلاک رو از روی ردیس میخونم
+        // چیزی که اینو صدا میزنه 
+
+        // از روی همین بلاک هم بخونم برای ایونت هامون 
+
         try {
             this.logger.log('creating transfer event subscription');
             const events = this.contract.events.Transfer({
                 fromBlock: 'latest'
+                // toBlock
             });
             events.on('connected', (subscriptionId: string) => {
                 this.logger.log(`transfer event subs connected with id : ${subscriptionId}`);
@@ -112,6 +122,63 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         catch (error) {
             this.logger.error('Error processing transfer event: ', error);
+            throw error;
+        }
+    }
+
+    async getTransfersForBlock(blockNumber: number) {
+        try {
+            const events = await this.contract.getPastEvents('Transfer', {
+                fromBlock: blockNumber,
+                toBlock: blockNumber
+            });
+
+            for (const event of events) {
+                await this.processTransferEvent(event);
+            }
+
+            return events.map(event => ({
+                transactionHash: event.transactionHash,
+                from: event.returnValues.from,
+                to: event.returnValues.to,
+                value: event.returnValues.value.toString(),
+                blockNumber: Number(event.blockNumber),
+                logIndex: Number(event.logIndex)
+            }));
+        }
+        catch (error) {
+            this.logger.error(`Error getting transfers for block ${blockNumber}:`, error);
+            throw error;
+        }
+
+    }
+
+    async getTransfers(page: number, limit: number) {
+        try {
+            const [transfers, total] = await this.usdcTransactionRepository.findAndCount({
+                order: { createdAt: 'DESC' },
+                skip: (page - 1) * limit,
+                take: limit
+            });
+
+            const formattedTransfers = transfers.map(transfers => ({
+                ...transfers,
+                valudInUSDC: (BigInt(transfers.value) / BigInt(10 ** 6)).toString(),
+                valudInRawUnits: transfers.value
+            }));
+
+            return {
+                data: formattedTransfers,
+                meta: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        }
+        catch (error) {
+            this.logger.error('Failed to fetch transfers:', error);
             throw error;
         }
     }

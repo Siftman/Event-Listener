@@ -10,6 +10,7 @@ import Web3 from "web3";
 import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
 import { BaseWeb3Service } from "./base-web3.service";
+import { Matches } from "class-validator";
 
 
 @Injectable()
@@ -21,7 +22,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         private queueService: QueueService,
         @InjectRepository(Block)
         private blockRepository: Repository<Block>,
-    ) { 
+    ) {
         super(configService, BlockListenerService.name);
     }
 
@@ -33,7 +34,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
             await this.setup_Block_Header_Subscription();
             this.startBlockProcessor();
         }
-        catch(error){
+        catch (error) {
             this.logger.error('Fail to initialize:', error);
             throw error;
         }
@@ -108,7 +109,31 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         }
     }
 
-    public async getLatestBlock(){
+    public async getLatestBlock() {
         return await this.web3.eth.getBlockNumber();
+    }
+
+    public async getBlocks(page: number, limit: number) {
+        try {
+            const [blocks, total] = await this.blockRepository.findAndCount({
+                order: { number: 'DESC' },
+                skip: (page - 1) * limit,
+                take: limit
+            });
+
+            return {
+                data: blocks,
+                meta: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            };
+        }
+        catch (error) {
+            this.logger.error('fail to fetch block', error);
+            throw error;
+        }
     }
 }
