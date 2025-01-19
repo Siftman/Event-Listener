@@ -66,8 +66,6 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
 
         while (true) {
             try {
-                this.logger.log('in process ...');
-
                 const blockNumber = await this.queueService.getNextBlock();
                 if (!blockNumber) {
                     this.logger.log('no block to process. waiting ...');

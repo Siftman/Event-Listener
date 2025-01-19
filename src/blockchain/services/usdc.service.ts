@@ -82,6 +82,12 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
 
     private async processTransferEvent(event: any) {
         try {
+            const ValueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
+            if (ValueInUSDC <= BigInt(100_000)) {
+                this.logger.debug(`skipping small transfer: ${ValueInUSDC} usdc`);
+                return;
+            }
+
             const transaction = this.usdcTransactionRepository.create({
                 transactionHash: event.transactionHash,
                 blockNumber: event.blockNumber,
@@ -90,7 +96,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 value: event.returnValues.value
             });
             await this.usdcTransactionRepository.save(transaction);
-            this.logger.log(`Processed USDC trnasfer: ${event.transactionHash}`);
+            this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${ValueInUSDC}) in usdc`);
         }
         catch (error) {
             this.logger.error('Error processing transfer event: ', error);
