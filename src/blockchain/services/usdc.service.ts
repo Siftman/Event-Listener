@@ -105,7 +105,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 blockNumber: Number(event.blockNumber),
                 from: event.returnValues.from,
                 to: event.returnValues.to,
-                ValueInUSDC: event.returnValues.value.toString(),
+                valueInUSDC: Number(valueInUSDC).toLocaleString(),
                 timestamp: Date.now()
             })
             this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);

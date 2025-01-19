@@ -40,13 +40,13 @@
         });
 
         socket.on('largeTransfer', (transfer) => {
+            console.log('Received transfer:', transfer); // Debug log
             const transferDiv = document.createElement('div');
             transferDiv.className = 'transfer';
             transferDiv.innerHTML = `
                 <div>Block: ${transfer.blockNumber}</div>
                 <div>From: ${transfer.from}</div>
                 <div>To: ${transfer.to}</div>
-                <div>${transfer.valueInUSDC}</div>
                 <div class="large-value">Amount: ${transfer.valueInUSDC} USDC</div>
                 <div>Tx Hash: ${transfer.transactionHash}</div>
                 <div>Time: ${new Date(transfer.timestamp).toLocaleString()}</div>
