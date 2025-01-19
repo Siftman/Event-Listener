@@ -42,7 +42,7 @@ export abstract class BaseWeb3Service {
             throw error;
         }
     }
-    public async getLatestBlock() {
+    protected async getLatestBlock() {
         const blockNumber = await this.web3.eth.getBlockNumber();
         return blockNumber;
     }
