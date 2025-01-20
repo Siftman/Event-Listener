@@ -10,6 +10,7 @@ import { USDC_ABI } from "../contracts/usdc.interface";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { TransferGateway } from "../gateways/transfer.gateway";
 import { BlockchainException } from "src/common/exceptions/blockchain.exception";
+import { BroadCastException } from "src/common/exceptions/broadcast.exception"; 
 
 
 @Injectable()
@@ -93,8 +94,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
     }
 
-
-    // private async 
+    
     private async processTransferEvent(event: any) {
             const valueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
             if (valueInUSDC <= BigInt(100_000)) {
@@ -131,10 +131,9 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
             }
             catch(error) {
-
+                throw new BroadCastException('')
             }
         }
-    }
 
     async getTransfersForBlock(blockNumber: number) {
         try {

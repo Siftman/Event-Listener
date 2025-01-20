@@ -30,7 +30,7 @@ export class TransferGateway implements OnGatewayConnection, OnGatewayDisconnect
             this.server.emit('largeTransfer', transfer);
         }
         catch {
-            throw new 
+            throw new Error('Error in transfering large usdc trxs')
         }
         this.logger.log(`Broadcasted large transfer to ${this.connectedClients.size} clients`);
     }
