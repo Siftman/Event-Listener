@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
@@ -26,7 +26,21 @@ export class TransferGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     broadcastTransfer(transfer: any) {
-        this.server.emit('largeTransfer', transfer);
+        try {
+            this.server.emit('largeTransfer', transfer);
+        }
+        catch {
+            throw new 
+        }
         this.logger.log(`Broadcasted large transfer to ${this.connectedClients.size} clients`);
+    }
+
+    @SubscribeMessage("ping")
+    handleMessage(client: any) {
+        this.logger.log(`connection check from clinet : ${client.id}`)
+        return {
+            event: "pong",
+            data: "the connection is stable",
+        }
     }
 }
