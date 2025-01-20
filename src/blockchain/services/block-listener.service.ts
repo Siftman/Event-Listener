@@ -70,11 +70,9 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
             try {
                 const blockNumber = await this.queueService.getNextBlock();
                 if (!blockNumber) {
-                    this.logger.log('no block to process. waiting ...');
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     continue;
                 }
-                this.logger.log(`processing block ${blockNumber}...`)
                 const block = await retry(
                     async () => {
                         const result = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
@@ -84,7 +82,6 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
                         return result;
                     }, 5, 2000)
                 await this.processBlock(block);
-                this.logger.log(`block ${blockNumber} processed successfully.`)
             }
             catch (error) {
                 this.logger.error(`cannot process the block: ${error}`)
@@ -108,7 +105,6 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
             });
 
             await this.blockRepository.save(block);
-            this.logger.log(`block number ${block.number} is processed!`)
         }
         catch (error) {
             this.logger.error(`fail to proceess the block ${blockData.number}`)
