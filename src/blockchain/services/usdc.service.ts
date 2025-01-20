@@ -10,7 +10,7 @@ import { USDC_ABI } from "../contracts/usdc.interface";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { TransferGateway } from "../gateways/transfer.gateway";
 import { BlockchainException } from "src/common/exceptions/blockchain.exception";
-import { BroadCastException } from "src/common/exceptions/broadcast.exception"; 
+import { BroadCastException } from "src/common/exceptions/broadcast.exception";
 import { retry } from "../utils/retry.utils";
 
 
@@ -45,29 +45,25 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
             throw new BlockchainException('USDC contract address not configured');
         }
         await retry(
-            async() => {
-                    console.log('----here----')
-                    this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
-                    if (!this.contract) {
-                        console.log('-----retry will happen-----')
-                        throw new BlockchainException('Failed to initialize contract');
-                    }
-            }, 10, 1000) 
+            async () => {
+                console.log('----here----')
+                this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
+                if (!this.contract) {
+                    console.log('-----retry will happen-----')
+                    throw new BlockchainException('Failed to initialize contract');
+                }
+            }, 10, 1000)
     }
 
     private async setupTransferEventListener() {
-        try {
-            this.logger.log('creating transfer event subscription');
+        const lastProcessedEvent = await this.queueService.getLastProcessedEvent() || 'latest';
+        this.logger.log(`Creating Transfer event subscription from block ${lastProcessedEvent}...`);
 
-            const lastProcessedEvent = await this.queueService.getLastProcessedEvent() || 'latest';
-            this.logger.log(`Creating Transfer event subscription from block ${lastProcessedEvent}...`);
-
+        await retry(async () => {
             const events = this.contract.events.Transfer({
                 fromBlock: lastProcessedEvent
             });
-            events.on('connected', (subscriptionId: string) => {
-                this.logger.log(`transfer event subs connected with id : ${subscriptionId}`);
-            })
+
             events.on('data', async (event: any) => {
                 this.logger.log('Received Transfer event:', {
                     txHash: event.transactionHash,
@@ -78,58 +74,56 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 });
                 await this.processTransferEvent(event);
             });
+
             events.on('error', (error: any) => {
                 this.logger.error('transfer event error:', error);
-                this.logger.log('attempting to reconnect transfer event listener...');
-                setTimeout(() => this.setupTransferEventListener(), 5000);
+                throw new BlockchainException('Transfer event subscription error');
             });
-        }
-        catch (error) {
-            this.logger.error('fail to setup transfer event listener');
-            throw new BlockchainException('Transfer event subscription error');
-        }
+
+            return events;
+        }, 3, 5000);
     }
 
-    
+
     private async processTransferEvent(event: any) {
-            const valueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
-            if (valueInUSDC <= BigInt(100_000)) {
-                this.logger.debug(`skipping small transfer: ${valueInUSDC} usdc`);
-                return;
-            }
-            try {
-                const transaction = this.usdcTransactionRepository.create({
-                    transactionHash: event.transactionHash,
-                    blockNumber: event.blockNumber,
-                    from: event.returnValues.from,
-                    to: event.returnValues.to,
-                    value: event.returnValues.value
-                });
-                await this.usdcTransactionRepository.save(transaction);
-            }
-            catch (error) {
-                throw new BlockchainException('fail to save the transaction into db')
-            }
-
-            this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
-
-            try {
-
-                this.transferGateway.broadcastTransfer({
-                    transactionHash: event.transactionHash,
-                    blockNumber: Number(event.blockNumber),
-                    from: event.returnValues.from,
-                    to: event.returnValues.to,
-                    valueInUSDC: Number(valueInUSDC).toLocaleString(),
-                    timestamp: Date.now()
-                })
-                this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);   
-                await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
-            }
-            catch(error) {
-                throw new BroadCastException('')
-            }
+        const valueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
+        if (valueInUSDC <= BigInt(100_000)) {
+            this.logger.debug(`skipping small transfer: ${valueInUSDC} usdc`);
+            return;
         }
+        try {
+            const transaction = this.usdcTransactionRepository.create({
+                transactionHash: event.transactionHash,
+                blockNumber: event.blockNumber,
+                from: event.returnValues.from,
+                to: event.returnValues.to,
+                value: event.returnValues.value
+            });
+            await this.usdcTransactionRepository.save(transaction);
+        }
+        catch (error) {
+            throw new BlockchainException('fail to save the transaction into db')
+        }
+
+        this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+
+        try {
+
+            this.transferGateway.broadcastTransfer({
+                transactionHash: event.transactionHash,
+                blockNumber: Number(event.blockNumber),
+                from: event.returnValues.from,
+                to: event.returnValues.to,
+                valueInUSDC: Number(valueInUSDC).toLocaleString(),
+                timestamp: Date.now()
+            })
+            this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+            await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
+        }
+        catch (error) {
+            throw new BroadCastException('')
+        }
+    }
 
     async getTransfersForBlock(blockNumber: number) {
         try {
