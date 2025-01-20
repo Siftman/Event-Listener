@@ -8,6 +8,7 @@ import { BlockNumberOrTag } from 'web3-types';
 import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
 import { BaseWeb3Service } from "./base-web3.service";
+import { BlockchainException, BlockNotFoundException } from "src/common/exceptions/blockchain.exception";
 
 
 
@@ -35,7 +36,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         }
         catch (error) {
             this.logger.error('Fail to initialize:', error);
-            throw error;
+            throw new BlockchainException('fail ro initilize bc service');
         }
     }
 
@@ -56,7 +57,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         }
         catch (error) {
             this.logger.error('Failed to setup subscription', error);
-            throw error;
+            throw new BlockchainException('Failed to setup block header subscription');
         }
     }
 
@@ -75,6 +76,9 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
                 this.logger.log(`processing block ${blockNumber}...`)
 
                 const block = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
+                if (!block) {
+                    throw new BlockNotFoundException(Number(blockNumber));
+                }
                 await this.processBlock(block);
                 this.logger.log(`block ${blockNumber} processed successfully.`)
             }
@@ -104,7 +108,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         }
         catch (error) {
             this.logger.error(`fail to proceess the block ${blockData.number}`)
-            throw error;
+            throw new BlockchainException(`Failed to process block ${blockData.number}`);
         }
     }
 
