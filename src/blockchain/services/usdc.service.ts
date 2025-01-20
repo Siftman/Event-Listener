@@ -84,14 +84,14 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }, 3, 5000);
     }
 
-
     private async processTransferEvent(event: any) {
         const valueInUSDC = BigInt(event.returnValues.value) / BigInt(10 ** 6);
         if (valueInUSDC <= BigInt(100_000)) {
             this.logger.debug(`skipping small transfer: ${valueInUSDC} usdc`);
             return;
         }
-        try {
+    
+        await retry(async () => {
             const transaction = this.usdcTransactionRepository.create({
                 transactionHash: event.transactionHash,
                 blockNumber: event.blockNumber,
@@ -99,16 +99,13 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 to: event.returnValues.to,
                 value: event.returnValues.value
             });
-            await this.usdcTransactionRepository.save(transaction);
-        }
-        catch (error) {
-            throw new BlockchainException('fail to save the transaction into db')
-        }
-
-        this.logger.log(`Processed enough large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
-
-        try {
-
+            return await this.usdcTransactionRepository.save(transaction);
+        }, 3, 1000);
+    
+        this.logger.log(`Processed enough large USDC transfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+    
+        await retry(
+            async () => {
             this.transferGateway.broadcastTransfer({
                 transactionHash: event.transactionHash,
                 blockNumber: Number(event.blockNumber),
@@ -116,13 +113,10 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
                 to: event.returnValues.to,
                 valueInUSDC: Number(valueInUSDC).toLocaleString(),
                 timestamp: Date.now()
-            })
-            this.logger.log(` broadcasted large USDC trnasfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
-            await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
-        }
-        catch (error) {
-            throw new BroadCastException('')
-        }
+            });
+            this.logger.log(`broadcasted large USDC transfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+            return await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
+        }, 3, 1000);
     }
 
     async getTransfersForBlock(blockNumber: number) {
