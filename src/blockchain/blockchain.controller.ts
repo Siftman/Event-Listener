@@ -5,6 +5,7 @@ import { BlockListenerService } from "./services/block-listener.service";
 import { USDCService } from "./services/usdc.service";
 import { PaginationDto } from "src/common/dto/pagination.dto";
 import { Throttle } from "@nestjs/throttler";
+import { TransactionNotFoundException } from "src/common/exceptions/blockchain.exception";
 
 
 @ApiTags('blockchain')
@@ -61,10 +62,7 @@ export class BlockchainController {
             };
         }
         catch (error) {
-            throw new HttpException({
-                status: HttpStatus.INTERNAL_SERVER_ERROR,
-                error: error.message
-            }, HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new TransactionNotFoundException(blockNumber)
         }
     }
 

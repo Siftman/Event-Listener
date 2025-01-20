@@ -60,11 +60,6 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     }
 
     private async setupTransferEventListener() {
-        // don't miss any events 
-        // تا الان کدوم بلاک هارو گرفتم - از اخرین بلاکی که دارم تا لیتست بلاک 
-        // اینجا هم میتونم کیو داشته باشیم لیتست بلاک رو از روی ردیس میخونم
-        // چیزی که اینو صدا میزنه 
-
         try {
             this.logger.log('creating transfer event subscription');
 

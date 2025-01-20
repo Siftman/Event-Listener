@@ -21,11 +21,11 @@ export class BlockNotFoundException extends HttpException {
 }
 
 export class TransactionNotFoundException extends HttpException {
-    constructor(txHash: string) {
+    constructor(blockNumber: number) {
         super({
             statusCode: HttpStatus.NOT_FOUND,
-            message: `Transaction ${txHash} not found`,
-            error: 'Transaction Not Found'
+            message: `Transaction with block number  ${blockNumber} not found`,
+            error: 'Transaction not found'
         }, HttpStatus.NOT_FOUND);
     }
 } 
