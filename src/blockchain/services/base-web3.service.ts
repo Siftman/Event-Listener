@@ -27,19 +27,13 @@ export abstract class BaseWeb3Service {
         }
         await retry(
             async () => {
-                try {
-                    this.wsProvider = new Web3.providers.WebsocketProvider(url);
-                    this.web3 = new Web3(this.wsProvider);
-                    const blockNumber = await this.web3.eth.getBlockNumber();
-                    if (!blockNumber) {
-                        throw new BlockchainException('websocket connection cannot return latest block.')
-                    }
+                this.wsProvider = new Web3.providers.WebsocketProvider(url);
+                this.web3 = new Web3(this.wsProvider);
+                const blockNumber = await this.web3.eth.getBlockNumber();
+                if (!blockNumber) {
+                    throw new BlockchainException('websocket connection cannot return latest block.')
                 }
-                catch (errr) {
-                    this.logger.warn('web3 websocket does not working, retrying...')
-                }
-            }
-        )
+            },5, 2000)
     }
     protected async getLatestBlock() {
         const blockNumber = await this.web3.eth.getBlockNumber();

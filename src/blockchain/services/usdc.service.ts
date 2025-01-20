@@ -11,6 +11,7 @@ import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { TransferGateway } from "../gateways/transfer.gateway";
 import { BlockchainException } from "src/common/exceptions/blockchain.exception";
 import { BroadCastException } from "src/common/exceptions/broadcast.exception"; 
+import { retry } from "../utils/retry.utils";
 
 
 @Injectable()
@@ -39,24 +40,19 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     }
 
     private async initializeContract() {
-        try {
-            const contractAddress = this.configService.get<string>('USDC_CONTRACT_ADDRESS');
-            if (!contractAddress) {
-                throw new BlockchainException('USDC contract address not configured');
-            }
-            if (!this.web3) {
-                throw new BlockchainException('Web3 not initialized');
-            }
-            this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
-            if (!this.contract) {
-                throw new BlockchainException('Failed to initialize contract');
-            }
-            this.logger.log(`usdc service initialized with contract : ${contractAddress}`);
+        const contractAddress = this.configService.get<string>('USDC_CONTRACT_ADDRESS');
+        if (!contractAddress) {
+            throw new BlockchainException('USDC contract address not configured');
         }
-        catch (error) {
-            this.logger.error('faild to initilize usdc contract: ', error)
-            throw new BlockchainException('failed to initialize USDC contract');
-        }
+        await retry(
+            async() => {
+                    console.log('----here----')
+                    this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
+                    if (!this.contract) {
+                        console.log('-----retry will happen-----')
+                        throw new BlockchainException('Failed to initialize contract');
+                    }
+            }, 10, 1000) 
     }
 
     private async setupTransferEventListener() {

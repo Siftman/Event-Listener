@@ -1,17 +1,25 @@
 
-export const retry = async <T>(func: () => Promise<T>, max_retries = 5, delay = 1000): Promise<T> => {
+export const retry = async <T>(
+    func: () => Promise<T>,
+    max_retry = 5,
+    default_delay = 1000,
+): Promise<T> => {
     let retries = 0;
-    while (retries < max_retries) {
+    let delay = default_delay;
+
+    while (true) {
         try {
-            console.log('...IT DOES WORK...')
-            return await func();
+            const result = await func();
+            return result;
         }
-        catch (error) {
+        catch(error) {
+            console.log('----here in retry----')
             retries++;
-            if (retries === max_retries) {
-                throw new Error('retried exceeded limit!')
+            if(retries >= max_retry) {
+                throw new Error(`operation failed after ${max_retry}`)
             }
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
+
 }

@@ -77,18 +77,12 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
                 this.logger.log(`processing block ${blockNumber}...`)
                 const block = await retry(
                     async () => {
-                        try {
-                            const result = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
-                            if(!result){
-                                throw new BlockNotFoundException(Number(blockNumber));
-                            }
-                            return result;
+                        const result = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
+                        if (!result) {
+                            throw new BlockNotFoundException(Number(blockNumber));
                         }
-                        catch (error) {
-                            this.logger.warn(`fail to fetch the block number: ${blockNumber}. retrying ...`);
-                        }
-                    }
-                )
+                        return result;
+                    }, 5, 2000)
                 await this.processBlock(block);
                 this.logger.log(`block ${blockNumber} processed successfully.`)
             }
@@ -124,19 +118,12 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
     public async getLatestBlock() {
         return await retry(
             async () => {
-                try {
-
-                    const result = await this.web3.eth.getBlockNumber();
-                    if(!result){
-                        throw new BlockchainException('Cannot get the last block');
-                    }
-                    return result;
+                const result = await this.web3.eth.getBlockNumber();
+                if (!result) {
+                    throw new BlockchainException('Cannot get the last block');
                 }
-                catch (error) {
-                    this.logger.warn(`cannot get the latest block, retrying...`)
-                }
-            }
-        )
+                return result;
+            }, 5, 1000)
     }
 
     public async getBlocks(page: number, limit: number) {
