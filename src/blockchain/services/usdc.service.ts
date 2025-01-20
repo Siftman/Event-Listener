@@ -10,6 +10,7 @@ import { Repository } from "typeorm";
 import { TransferGateway } from "../gateways/transfer.gateway";
 import { QueueService } from "./queue.service";
 import { ERR_TX_RECEIPT_MISSING_OR_BLOCKHASH_NULL } from "web3";
+import { BlockchainException } from "src/common/exceptions/blockchain.exception";
 
 @Injectable()
 export class USDCService extends BaseWeb3Service implements OnModuleInit {
@@ -26,9 +27,14 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     }
 
     async onModuleInit() {
-        await this.initializeWeb3Connection();
-        await this.initializeContract();
-        await this.setupTransferEventListener();
+        try {
+            await this.initializeWeb3Connection();
+            await this.initializeContract();
+            await this.setupTransferEventListener();
+        }
+        catch (error) {
+            throw new BlockchainException('fail to initlize usdc service');
+        }
     }
 
     private async initializeContract() {
@@ -36,20 +42,20 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
             this.logger.log('initialize contract');
             const contractAddress = this.configService.get<string>('USDC_CONTRACT_ADDRESS');
             if (!contractAddress) {
-                throw new Error('usdc contract address is not set');
+                throw new BlockchainException('USDC contract address not configured');
             }
             if (!this.web3) {
-                throw new Error('web3 is not initialized');
+                throw new BlockchainException('Web3 not initialized');
             }
             this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
             if (!this.contract) {
-                throw new Error('fail to initilize contract');
+                throw new BlockchainException('Failed to initialize contract');
             }
             this.logger.log(`usdc service initialized with contract : ${contractAddress}`);
         }
         catch (error) {
             this.logger.error('faild to initilize usdc contract: ', error)
-            throw error;
+            throw new BlockchainException('failed to initialize USDC contract');
         }
     }
 
@@ -58,8 +64,6 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         // تا الان کدوم بلاک هارو گرفتم - از اخرین بلاکی که دارم تا لیتست بلاک 
         // اینجا هم میتونم کیو داشته باشیم لیتست بلاک رو از روی ردیس میخونم
         // چیزی که اینو صدا میزنه 
-
-        // از روی همین بلاک هم بخونم برای ایونت هامون 
 
         try {
             this.logger.log('creating transfer event subscription');
@@ -91,7 +95,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         catch (error) {
             this.logger.error('fail to setup transfer event listener');
-            throw error;
+            throw new BlockchainException('Transfer event subscription error');
         }
     }
 
@@ -127,7 +131,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         catch (error) {
             this.logger.error('Error processing transfer event: ', error);
-            throw error;
+            throw new BlockchainException('Error processing transfer event');
         }
     }
 
@@ -153,7 +157,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         catch (error) {
             this.logger.error(`Error getting transfers for block ${blockNumber}:`, error);
-            throw error;
+            throw new BlockchainException(`Failed to get transfers for block ${blockNumber}`);
         }
 
     }
@@ -184,7 +188,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         catch (error) {
             this.logger.error('Failed to fetch transfers:', error);
-            throw error;
+            throw new BlockchainException('Failed to retrieve transfer history');
         }
     }
 }
