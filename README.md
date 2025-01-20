@@ -1,99 +1,172 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# USDC Transfer Monitor
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A robust NestJS application that monitors and tracks large USDC transfers on the Ethereum blockchain in real-time. The application provides REST APIs for querying historical transfer data and WebSocket connections for real-time transfer notifications.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+### Real-time Monitoring
+- WebSocket-based real-time monitoring of USDC transfers
+- Automatic event tracking with missed event recovery
+- Real-time notifications for large transfers (>100,000 USDC)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### REST APIs
+- `GET /api/latest-block`: Retrieve the latest processed block
+- `GET /api/blocks`: Query historical blocks with pagination
+- `GET /api/transfers`: Get historical transfers with filtering and pagination
+- `GET /api/transfers/:blockNumber`: Fetch transfers for a specific block
 
-## Project setup
+### Performance Optimizations
+- Intelligent cache invalidation for real-time data consistency
+- Pagination support for all list endpoints
+- Rate limiting to prevent API abuse
 
+### Data Validation & Security
+- Input validation using DTOs and class-validator
+- Comprehensive error handling with custom exceptions
+- CORS protection and security headers
+
+## Technical Stack
+
+- **Framework**: NestJS
+- **Language**: TypeScript
+- **Database**: PostgreSQL with TypeORM
+- **Caching**: Redis
+- **Blockchain**: Web3.js
+- **Testing**: Jest
+- **WebSocket**: Socket.io
+- **API Documentation**: Swagger/OpenAPI
+
+## Architecture
+
+### Core Services
+- `BlockListenerService`: Monitors new blocks and maintains blockchain synchronization
+- `USDCService`: Handles USDC transfer events and transaction processing
+- `QueueService`: Manages Redis caching and event tracking
+- `BlockchainController`: Exposes REST APIs for data access
+
+### Data Flow
+1. Block Listener monitors new Ethereum blocks
+2. USDC transfers are detected and processed
+3. Large transfers trigger WebSocket notifications
+4. Data is cached in Redis for quick access
+5. REST APIs serve historical data with pagination
+
+### Caching Strategy
+- Cached data includes:
+  - Recent transfers (paginated)
+  - Block information
+  - Frequently accessed queries
+- Cache invalidation on new transfers
+- Sliding window cache for real-time data
+
+### Error Handling
+- Custom HTTP exception filter
+- Rate limit error handling
+- Blockchain node error recovery
+- Automatic retry with exponential backoff
+
+## Getting Started
+
+### Prerequisites
 ```bash
-$ npm install
+- Node.js (v16+)
+- PostgreSQL
+- Redis
+- Ethereum Node (WSS endpoint)
 ```
 
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+### Environment Variables
+```env
+ETHEREUM_RPC_URL=your_rpc_url
+ETHEREUM_WS_URL=your_ws_url
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=your_db
+REDIS_URL=redis://localhost:6379
 ```
 
-## Run tests
-
+### Installation
 ```bash
-# unit tests
-$ npm run test
+# Install dependencies
+npm install
 
-# e2e tests
-$ npm run test:e2e
+# Run database migrations
+npm run migration:run
 
-# test coverage
-$ npm run test:cov
+# Start the application
+npm run start:dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### Testing
 ```bash
-$ npm install -g mau
-$ mau deploy
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## API Documentation
 
-## Resources
+### Endpoints
 
-Check out a few resources that may come in handy when working with NestJS:
+#### Blocks
+- `GET /api/latest-block`
+  - Returns the latest processed block number
+  - Rate limit: 120 requests/minute
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- `GET /api/blocks`
+  - Returns paginated list of blocks
+  - Query params: `page`, `limit`
+  - Rate limit: 100 requests/minute
 
-## Support
+#### Transfers
+- `GET /api/transfers`
+  - Returns paginated list of transfers
+  - Query params: `page`, `limit`, `from`, `to`, `minValue`
+  - Rate limit: 100 requests/minute
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- `GET /api/transfers/:blockNumber`
+  - Returns transfers for specific block
+  - Rate limit: 50 requests/minute
 
-## Stay in touch
+### WebSocket Events
+- `largeTransfer`: Emitted when a transfer exceeds 100,000 USDC
+  ```typescript
+  {
+    blockNumber: number;
+    from: string;
+    to: string;
+    value: string;
+    timestamp: Date;
+  }
+  ```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Performance Considerations
 
-## License
+- Optimized database queries with proper indexing
+- Efficient caching strategies for frequently accessed data
+- Rate limiting to prevent API abuse
+- Pagination for large datasets
+- WebSocket for real-time updates instead of polling
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Security Measures
+
+- Input validation and sanitization
+- Rate limiting per endpoint
+- CORS configuration
+- Error message sanitization
+- Proper error handling and logging
+
+## Future Improvements
+
+- Implement GraphQL API
+- Add support for multiple ERC20 tokens
+- Enhanced analytics and reporting
+- Implement webhook notifications
+- Add support for multiple blockchain networks
