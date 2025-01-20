@@ -5,14 +5,13 @@ import { Repository } from "typeorm";
 import { BlockNumberOrTag } from 'web3-types';
 
 
-import Web3 from "web3";
-
 import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
 import { BaseWeb3Service } from "./base-web3.service";
-import { Matches } from "class-validator";
 
 
+
+// we can do the same(like what I did for event) for avoid missing any block in case of server fail.
 @Injectable()
 export class BlockListenerService extends BaseWeb3Service implements OnModuleInit {
     private isProcessing = false;

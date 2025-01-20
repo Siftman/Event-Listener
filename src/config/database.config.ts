@@ -2,6 +2,7 @@ import { TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { ConfigService } from '@nestjs/config';
 
 import { Block } from '../blockchain/entities/block.entity';
+import { USDCTransaction } from "src/blockchain/entities/usdc-transaction.entity";
 
 export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
@@ -10,7 +11,7 @@ export const databaseConfig = (configService: ConfigService): TypeOrmModuleOptio
     username: configService.get('POSTGRES_USER'),
     password: configService.get('POSTGRES_PASSWORD'),
     database: configService.get('POSTGRES_DB'),
-    entities: [Block],
+    entities: [Block, USDCTransaction],
     synchronize: true,
     autoLoadEntities: true,
 });

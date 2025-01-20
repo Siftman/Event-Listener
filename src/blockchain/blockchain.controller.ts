@@ -4,6 +4,7 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { BlockListenerService } from "./services/block-listener.service";
 import { USDCService } from "./services/usdc.service";
 import { PaginationDto } from "src/common/dto/pagination.dto";
+import { Throttle } from "@nestjs/throttler";
 
 
 @ApiTags('blockchain')
@@ -15,6 +16,7 @@ export class BlockchainController {
     ) { }
 
     @Get('blocks')
+    @Throttle({default: {limit: 2, ttl: 60000}})
     @ApiOperation({ summary: 'list of stored blocks' })
     @ApiResponse({ status: 200, description: 'return a list of blocks with pagination' })
     async getBlocks(@Query() paginationDto: PaginationDto) {
@@ -30,6 +32,7 @@ export class BlockchainController {
     }
 
     @Get('transfers')
+    @Throttle({default: {limit: 2, ttl: 60000}})
     @ApiOperation({ summary: 'list of large USDC transfers' })
     @ApiResponse({ status: 200, description: 'return a list of large usdc transfers with pagination' })
     async getTransfers(@Query() paginationDto: PaginationDto) {
@@ -45,6 +48,7 @@ export class BlockchainController {
     }
 
     @Get('transfers/:blockNumber')
+    @Throttle({default: {limit: 2, ttl: 60000}})
     @ApiOperation({ summary: 'get usdc transfers for a specific block' })
     @ApiResponse({ status: 200, description: 'return USDC transfers for the specified block' })
     async getTransfersByBlock(@Param('blockNumber', ParseIntPipe) blockNumber: number) {
@@ -65,6 +69,7 @@ export class BlockchainController {
     }
 
     @Get('latest-block')
+    @Throttle({default: {limit: 2, ttl: 60000}})
     @ApiOperation({ summary: 'Get latest block number' })
     @ApiResponse({ status: 200, description: 'Returns the latest block number' })
     async getLatestBlock() {
