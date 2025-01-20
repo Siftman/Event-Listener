@@ -1,20 +1,17 @@
-import { resolve } from "path";
 
-
-function retry(func, retries = 5, delay = 1000) {
-    return async function (...args: any[]) {
-        let attempts = 0;
-        while (attempts < retries) {
-            try {
-                return await func(...args);
+export const retry = async <T>(func: () => Promise<T>, max_retries = 5, delay = 1000): Promise<T> => {
+    let retries = 0;
+    while (retries < max_retries) {
+        try {
+            console.log('...IT DOES WORK...')
+            return await func();
+        }
+        catch (error) {
+            retries++;
+            if (retries === max_retries) {
+                throw new Error('retried exceeded limit!')
             }
-            catch (error) {
-                attempts++;
-                if (attempts >= retries ){
-                    throw new Error('fail after retries.')
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
 }

@@ -4,11 +4,12 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { BlockNumberOrTag } from 'web3-types';
 
-
+import { retry } from "../utils/retry.utils";
 import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
 import { BaseWeb3Service } from "./base-web3.service";
 import { BlockchainException, BlockNotFoundException } from "src/common/exceptions/blockchain.exception";
+import { log } from "console";
 
 
 
@@ -74,11 +75,20 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
                     continue;
                 }
                 this.logger.log(`processing block ${blockNumber}...`)
-
-                const block = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
-                if (!block) {
-                    throw new BlockNotFoundException(Number(blockNumber));
-                }
+                const block = await retry(
+                    async () => {
+                        try {
+                            const result = await this.web3.eth.getBlock(blockNumber as BlockNumberOrTag, true);
+                            if(!result){
+                                throw new BlockNotFoundException(Number(blockNumber));
+                            }
+                            return result;
+                        }
+                        catch (error) {
+                            this.logger.warn(`fail to fetch the block number: ${blockNumber}. retrying ...`);
+                        }
+                    }
+                )
                 await this.processBlock(block);
                 this.logger.log(`block ${blockNumber} processed successfully.`)
             }
@@ -111,9 +121,22 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
             throw new BlockchainException(`Failed to process block ${blockData.number}`);
         }
     }
-
     public async getLatestBlock() {
-        return await this.web3.eth.getBlockNumber();
+        return await retry(
+            async () => {
+                try {
+
+                    const result = await this.web3.eth.getBlockNumber();
+                    if(!result){
+                        throw new BlockchainException('Cannot get the last block');
+                    }
+                    return result;
+                }
+                catch (error) {
+                    this.logger.warn(`cannot get the latest block, retrying...`)
+                }
+            }
+        )
     }
 
     public async getBlocks(page: number, limit: number) {
