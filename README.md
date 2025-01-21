@@ -23,7 +23,6 @@ A robust NestJS application that monitors and tracks large USDC transfers on the
 ### Data Validation & Security
 - Input validation using DTOs and class-validator
 - Comprehensive error handling with custom exceptions
-- CORS protection and security headers
 
 ## Technical Stack
 
@@ -52,18 +51,13 @@ A robust NestJS application that monitors and tracks large USDC transfers on the
 5. REST APIs serve historical data with pagination
 
 ### Caching Strategy
-- Cached data includes:
-  - Recent transfers (paginated)
-  - Block information
-  - Frequently accessed queries
-- Cache invalidation on new transfers
 - Sliding window cache for real-time data
 
 ### Error Handling
 - Custom HTTP exception filter
 - Rate limit error handling
 - Blockchain node error recovery
-- Automatic retry with exponential backoff
+- Automatic retry 
 
 ## Getting Started
 
@@ -99,17 +93,6 @@ npm run migration:run
 npm run start:dev
 ```
 
-### Testing
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
-```
 
 ## API Documentation
 
@@ -118,22 +101,22 @@ npm run test:cov
 #### Blocks
 - `GET /api/latest-block`
   - Returns the latest processed block number
-  - Rate limit: 120 requests/minute
+  - Rate limit
 
 - `GET /api/blocks`
   - Returns paginated list of blocks
   - Query params: `page`, `limit`
-  - Rate limit: 100 requests/minute
+  - Rate limit
 
 #### Transfers
 - `GET /api/transfers`
   - Returns paginated list of transfers
   - Query params: `page`, `limit`, `from`, `to`, `minValue`
-  - Rate limit: 100 requests/minute
+  - Rate limit
 
 - `GET /api/transfers/:blockNumber`
   - Returns transfers for specific block
-  - Rate limit: 50 requests/minute
+  - Rate limit
 
 ### WebSocket Events
 - `largeTransfer`: Emitted when a transfer exceeds 100,000 USDC
@@ -148,25 +131,7 @@ npm run test:cov
   ```
 
 ## Performance Considerations
-
-- Optimized database queries with proper indexing
-- Efficient caching strategies for frequently accessed data
 - Rate limiting to prevent API abuse
 - Pagination for large datasets
 - WebSocket for real-time updates instead of polling
 
-## Security Measures
-
-- Input validation and sanitization
-- Rate limiting per endpoint
-- CORS configuration
-- Error message sanitization
-- Proper error handling and logging
-
-## Future Improvements
-
-- Implement GraphQL API
-- Add support for multiple ERC20 tokens
-- Enhanced analytics and reporting
-- Implement webhook notifications
-- Add support for multiple blockchain networks
