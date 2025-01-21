@@ -56,12 +56,16 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
     }
 
     private async setupTransferEventListener() {
-        const lastProcessedEvent = await this.queueService.getLastProcessedEvent() || 'latest';
-        this.logger.log(`Creating Transfer event subscription from block ${lastProcessedEvent}...`);
+        const lastProcessedBlock = await this.queueService.getLastProcessedEvent() || 'latest';
+        this.logger.log(`Creating Transfer event subscription from block ${lastProcessedBlock}...`);
 
         await retry(async () => {
             const events = this.contract.events.Transfer({
-                fromBlock: lastProcessedEvent
+                fromBlock: lastProcessedBlock
+            });
+
+            events.on('connected', (subscriptionId: string) => {
+                this.logger.log(`transfer event subs connected with id : ${subscriptionId}`);
             });
 
             events.on('data', async (event: any) => {
@@ -77,11 +81,12 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
 
             events.on('error', (error: any) => {
                 this.logger.error('transfer event error:', error);
-                throw new BlockchainException('Transfer event subscription error');
+                this.logger.log('attempting to reconnect transfer event listener...');
+                setTimeout(() => this.setupTransferEventListener(), 5000);
             });
 
             return events;
-        }, 3, 5000);
+        }, 5, 5000);
     }
 
     private async processTransferEvent(event: any) {
@@ -90,7 +95,7 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
             this.logger.debug(`skipping small transfer: ${valueInUSDC} usdc`);
             return;
         }
-    
+
         await retry(async () => {
             const transaction = this.usdcTransactionRepository.create({
                 transactionHash: event.transactionHash,
@@ -101,22 +106,22 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
             });
             return await this.usdcTransactionRepository.save(transaction);
         }, 3, 1000);
-    
+
         this.logger.log(`Processed enough large USDC transfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
-    
+
         await retry(
             async () => {
-            this.transferGateway.broadcastTransfer({
-                transactionHash: event.transactionHash,
-                blockNumber: Number(event.blockNumber),
-                from: event.returnValues.from,
-                to: event.returnValues.to,
-                valueInUSDC: Number(valueInUSDC).toLocaleString(),
-                timestamp: Date.now()
-            });
-            this.logger.log(`broadcasted large USDC transfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
-            return await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
-        }, 3, 1000);
+                this.transferGateway.broadcastTransfer({
+                    transactionHash: event.transactionHash,
+                    blockNumber: Number(event.blockNumber),
+                    from: event.returnValues.from,
+                    to: event.returnValues.to,
+                    valueInUSDC: Number(valueInUSDC).toLocaleString(),
+                    timestamp: Date.now()
+                });
+                this.logger.log(`broadcasted large USDC transfer: ${event.transactionHash} (${valueInUSDC}) in usdc`);
+                return await this.queueService.setLastProcessedEvent(Number(event.blockNumber));
+            }, 3, 1000);
     }
 
     async getTransfersForBlock(blockNumber: number) {

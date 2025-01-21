@@ -9,8 +9,6 @@ import { QueueService } from "./queue.service";
 import { Block } from "../entities/block.entity";
 import { BaseWeb3Service } from "./base-web3.service";
 import { BlockchainException, BlockNotFoundException } from "src/common/exceptions/blockchain.exception";
-import { log } from "console";
-
 
 
 // we can do the same(like what I did for event) for avoid missing any block in case of server fail.
@@ -32,7 +30,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         this.logger.log('Blockchain service initializing...');
         try {
             await this.initializeWeb3Connection();
-            await this.setup_Block_Header_Subscription();
+            await this.setupBlockHeaderSubscription();
             this.startBlockProcessor();
         }
         catch (error) {
@@ -41,7 +39,7 @@ export class BlockListenerService extends BaseWeb3Service implements OnModuleIni
         }
     }
 
-    private async setup_Block_Header_Subscription() {
+    private async setupBlockHeaderSubscription() {
         try {
             const subscription = await this.web3.eth.subscribe('newBlockHeaders');
             subscription.on('connected', (subscriptionId) => {
