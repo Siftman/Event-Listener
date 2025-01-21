@@ -10,7 +10,7 @@ import { USDC_ABI } from "../contracts/usdc.interface";
 import { USDCTransaction } from "../entities/usdc-transaction.entity";
 import { TransferGateway } from "../gateways/transfer.gateway";
 import { BlockchainException } from "src/common/exceptions/blockchain.exception";
-import { BroadCastException } from "src/common/exceptions/broadcast.exception";
+
 import { retry } from "../utils/retry.utils";
 
 
@@ -46,10 +46,8 @@ export class USDCService extends BaseWeb3Service implements OnModuleInit {
         }
         await retry(
             async () => {
-                console.log('----here----')
                 this.contract = new this.web3.eth.Contract(USDC_ABI, contractAddress);
                 if (!this.contract) {
-                    console.log('-----retry will happen-----')
                     throw new BlockchainException('Failed to initialize contract');
                 }
             }, 10, 1000)
