@@ -98,13 +98,13 @@ No setup needed as default values are ready to go in the Docker setup.
 
 ### Environment Variables
 ```env
-ETHEREUM_RPC_URL=your_rpc_url
-ETHEREUM_WS_URL=your_ws_url
+ETHEREUM_RPC_URL-=#####-
+ETHEREUM_WS_URL=-#####-
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_USER=your_user
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=your_db
+POSTGRES_USER=user
+POSTGRES_PASSWORD=pwd
+POSTGRES_DB=db
 REDIS_URL=redis://localhost:6379
 ```
 
