@@ -1,6 +1,38 @@
-# USDC Transfer Monitor
+# USDC Large Transfer Monitor
 
-A robust NestJS application that monitors and tracks large USDC transfers on the Ethereum blockchain in real-time. The application provides REST APIs for querying historical transfer data and WebSocket connections for real-time transfer notifications.
+Real-time monitoring of large USDC transfers on Ethereum mainnet. Tracks transfers over 100,000 USDC and displays them in a simple web interface.
+
+## Quick Start
+```bash
+docker-compose up
+```
+Then open http://localhost:8080 in your browser. That's it!
+
+## How it Works
+
+The app listens to USDC transfer events on Ethereum mainnet using Web3. We track the last processed block to ensure we don't miss any transfers (stored in Redis). When a transfer event comes in, we filter out anything below 100k USDC to focus on whale movements.
+
+The backend is built with NestJS and uses Socket.IO for real-time updates. When a large transfer is detected, it's broadcasted to all connected web clients. We also store these events in Postgres for persistence.
+
+The frontend is a simple HTML page that connects to the WebSocket endpoint and displays transfers as they happen, newest first. Each transfer shows the block number, addresses involved, amount, and timestamp.
+
+## Architecture Flow
+
+api (NestJS) → listens to Ethereum events → filters large transfers → broadcasts via WebSocket → web client displays
+
+Data persistence:
+- Redis: Keeps track of the last processed block
+- Postgres: Stores transfer events
+- Nginx: Serves the static frontend
+
+## Environment
+
+The project uses environment variables for configuration. For Docker, these are set in `.env.docker`. The default setup includes:
+- Ethereum node connection (via Infura)
+- Database credentials
+- USDC contract address
+
+No setup needed as default values are ready to go in the Docker setup.
 
 ## Features
 
