@@ -28,7 +28,7 @@ Data persistence:
 ## Environment
 
 The project uses environment variables for configuration. For Docker, these are set in `.env.docker`. The default setup includes:
-- Ethereum node connection (via Infura)
+- Ethereum node connection
 - Database credentials
 - USDC contract address
 
@@ -48,7 +48,6 @@ No setup needed as default values are ready to go in the Docker setup.
 - `GET /api/transfers/:blockNumber`: Fetch transfers for a specific block
 
 ### Performance Optimizations
-- Intelligent cache invalidation for real-time data consistency
 - Pagination support for all list endpoints
 - Rate limiting to prevent API abuse
 
@@ -79,11 +78,7 @@ No setup needed as default values are ready to go in the Docker setup.
 1. Block Listener monitors new Ethereum blocks
 2. USDC transfers are detected and processed
 3. Large transfers trigger WebSocket notifications
-4. Data is cached in Redis for quick access
-5. REST APIs serve historical data with pagination
-
-### Caching Strategy
-- Sliding window cache for real-time data
+4. REST APIs serve historical data with pagination
 
 ### Error Handling
 - Custom HTTP exception filter
